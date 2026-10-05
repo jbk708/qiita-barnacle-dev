@@ -29,7 +29,7 @@ then queue the long job behind it with `--dependency=afterany:<short job id>`.
 `./stack/qiita-dev.sh <args>` runs the `qiita` CLI on the stack's node with the master token, e.g.
 `submit-ena-import PRJDB13464`, `reference list`, `ticket status <idx>`. Logs are in `$QDEV_ROOT/logs/`.
 Import-pilot and read-processing scripts live in
-[jbk708/qiita-ena-manifests](https://github.com/jbk708/qiita-ena-manifests).
+[jbk708/qiita-cq-analysis](https://github.com/jbk708/qiita-cq-analysis).
 
 ## Update the code
 
