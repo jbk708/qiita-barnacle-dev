@@ -1,0 +1,8 @@
+# ~/.qiita/config.toml on kl-remote: the environments baked into the qiita-web build (Caddy serves each /_env/<name>/api).
+current = "prod"
+
+[env.dev]
+base_url = "http://localhost:18080"
+
+[env.prod]
+base_url = "https://qiita-miint.ucsd.edu"

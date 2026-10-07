@@ -1,6 +1,17 @@
 # qiita-web on the barnacle dev stack. oauth2-proxy (127.0.0.1:4185) fronts this; cloudflared fronts oauth2-proxy.
+# Any Host: oauth2-proxy forwards the public one. Each /_env/<name>/api matches an env in ~/.qiita/config.toml.
 :8187 {
 	bind 127.0.0.1
+	handle_path /_env/dev/api/* {
+		rewrite * /api{path}
+		reverse_proxy 127.0.0.1:18080
+	}
+	handle_path /_env/prod/api/* {
+		rewrite * /api{path}
+		reverse_proxy https://qiita-miint.ucsd.edu {
+			header_up Host {upstream_hostport}
+		}
+	}
 	handle /api/* {
 		reverse_proxy 127.0.0.1:18080
 	}

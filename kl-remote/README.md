@@ -42,7 +42,12 @@ qiita-node.timer (2 min) ─▶ qiita-node.sh: newest running qiita-dev-stack jo
    keeping the last 3. The branch's code (vite config, npm deps) runs only in a throwaway `node:22-alpine` container
    (no capabilities, read-only root, source mounted read-only). A failed build leaves the live site alone and is not
    retried for that commit (`~/qiita-web-dev/failed/<sha>`). The branch has no lockfile, so deps float within
-   `package.json` ranges. Roll back: `ln -sfn releases/<sha> ~/qiita-web-dev/current`.
+   `package.json` ranges. Roll back: `ln -sfn releases/<id> ~/qiita-web-dev/current`.
+   Environment switch: upstream only reads `~/.qiita/config.toml` under `vite dev`, so the build goes through
+   `vite.config.deploy.ts`, which bakes that file's environments (`qiita-web-config.toml`: dev = this stack, prod =
+   qiita-miint) into the bundle; Caddy serves each `/_env/<name>/api`. A release id is `<sha>-<hash of config and
+   wrapper>`, so editing the config redeploys on the next tick. Install both next to the script and the config at
+   `~/.qiita/config.toml`.
 4. Caddy: append `Caddyfile.snippet` to `~/Caddyfile`, `~/caddy validate --config ~/Caddyfile`, `~/caddy reload ...`.
 5. Gate: `oauth2-proxy-qiita-dev.compose.yml` in `~/oauth2-proxy/qiita-dev/` (`.env`: the shared Google client's id and
    secret, plus its own `openssl rand -hex 16` cookie secret); `docker compose up -d`. Google login needs
