@@ -1,0 +1,28 @@
+services:
+  oauth2-proxy-qiita-dev:
+    image: quay.io/oauth2-proxy/oauth2-proxy:v7.6.0-alpine
+    container_name: oauth2-proxy-qiita-dev
+    restart: unless-stopped
+    network_mode: host          # Caddy serves qiita-web on 127.0.0.1:8187
+    env_file: .env
+    environment:
+      OAUTH2_PROXY_PROVIDER: google
+      OAUTH2_PROXY_HTTP_ADDRESS: "127.0.0.1:4185"     # loopback only
+      OAUTH2_PROXY_REVERSE_PROXY: "true"
+      OAUTH2_PROXY_UPSTREAMS: "http://127.0.0.1:8187"
+      OAUTH2_PROXY_REDIRECT_URL: "https://qiita-dev.knight-lab-dev.org/oauth2/callback"
+      OAUTH2_PROXY_COOKIE_SECURE: "true"
+      OAUTH2_PROXY_COOKIE_DOMAINS: "qiita-dev.knight-lab-dev.org"
+      OAUTH2_PROXY_WHITELIST_DOMAINS: "qiita-dev.knight-lab-dev.org"
+      OAUTH2_PROXY_EMAIL_DOMAINS: "ucsd.edu"
+      OAUTH2_PROXY_AUTHENTICATED_EMAILS_FILE: "/etc/oauth2-proxy/emails.txt"
+      OAUTH2_PROXY_PASS_BASIC_AUTH: "false"
+      OAUTH2_PROXY_SKIP_PROVIDER_BUTTON: "true"
+    volumes:
+      - /home/kl-user/oauth2-proxy/emails.txt:/etc/oauth2-proxy/emails.txt:ro
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:4185/ping || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s

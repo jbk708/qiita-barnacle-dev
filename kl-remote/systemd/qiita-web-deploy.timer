@@ -1,0 +1,11 @@
+[Unit]
+Description=Check lucaspatel/Qiita feat/web-ui for a new commit every 5 minutes
+
+[Timer]
+OnBootSec=2min
+OnUnitActiveSec=5min
+Persistent=true
+Unit=qiita-web-deploy.service
+
+[Install]
+WantedBy=timers.target

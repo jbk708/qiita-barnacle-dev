@@ -1,11 +1,11 @@
-# qiita-web SPA + API on kl-remote. Fronted by cloudflared and oauth2-proxy like the other hostnames.
-:8187 {
+# qiita-web on the barnacle dev stack. oauth2-proxy (127.0.0.1:4185) fronts this; cloudflared fronts oauth2-proxy.
+http://127.0.0.1:8187 {
 	bind 127.0.0.1
 	handle /api/* {
 		reverse_proxy 127.0.0.1:18080
 	}
 	handle {
-		root * /home/kl-user/qiita-web/build
+		root * /home/kl-user/qiita-web-dev/current
 		try_files {path} /index.html
 		file_server
 	}

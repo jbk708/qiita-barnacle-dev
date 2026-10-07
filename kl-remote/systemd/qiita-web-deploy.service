@@ -1,0 +1,9 @@
+[Unit]
+Description=Deploy the latest qiita-web build of lucaspatel/Qiita feat/web-ui
+After=network-online.target docker.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=%h/qiita-node/qiita-web-deploy.sh
+TimeoutStartSec=900

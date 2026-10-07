@@ -4,7 +4,7 @@ Serves the qiita-web SPA from kl-remote against the barnacle dev stack, which mo
 Same shape as the mimo gateway: a 2-minute timer finds the node, an ssh forward follows it.
 
 ```
-browser ─▶ cloudflared ─▶ oauth2-proxy ─▶ Caddy 127.0.0.1:8187 ─┬─ /api/* ─▶ 127.0.0.1:18080 ─▶ qiita-tunnel (ssh -J barnacle) ─▶ <node>:127.0.0.1:18080
+browser ─▶ cloudflared ─▶ oauth2-proxy :4185 ─▶ Caddy 127.0.0.1:8187 ─┬─ /api/* ─▶ 127.0.0.1:18080 ─▶ qiita-tunnel (ssh -J barnacle) ─▶ <node>:127.0.0.1:18080
                                                                 └─ SPA build/
 qiita-node.timer (2 min) ─▶ qiita-node.sh: newest running qiita-dev-stack job that is up and answers /healthz ─▶ tunnel-qiita.env, restart the tunnel
 ```
@@ -37,10 +37,20 @@ qiita-node.timer (2 min) ─▶ qiita-node.sh: newest running qiita-dev-stack jo
    systemctl --user enable qiita-tunnel.service
    curl -s -o /dev/null -w '%{http_code}\n' http://127.0.0.1:18080/healthz   # expect 200
    ```
-3. SPA: build from a pinned commit of `lucaspatel/feat/web-ui` (`cd qiita-web && npm ci && npm run build`) and copy
-   `build/` to `~/qiita-web/build`. Only once the stack runs the control-plane routes the UI needs.
-4. Caddy: add `Caddyfile.snippet`, validate, reload.
-5. Expose: a hostname on the `qiita-explore` tunnel behind oauth2-proxy (same pattern as the other gated hostnames).
+3. SPA, auto-deployed: `qiita-web-deploy.sh` + `qiita-web-deploy.{service,timer}` (every 5 min) build the latest
+   `lucaspatel/Qiita` `feat/web-ui` into `~/qiita-web-dev/releases/<sha>` and swap `~/qiita-web-dev/current` atomically,
+   keeping the last 3. The branch's code (vite config, npm deps) runs only in a throwaway `node:22-alpine` container
+   (no capabilities, read-only root, source mounted read-only). A failed build leaves the live site alone and is not
+   retried for that commit (`~/qiita-web-dev/failed/<sha>`). The branch has no lockfile, so deps float within
+   `package.json` ranges. Roll back: `ln -sfn releases/<sha> ~/qiita-web-dev/current`.
+4. Caddy: append `Caddyfile.snippet` to `~/Caddyfile`, `~/caddy validate --config ~/Caddyfile`, `~/caddy reload ...`.
+5. Gate: `oauth2-proxy-qiita-dev.compose.yml` in `~/oauth2-proxy/qiita-dev/` (`.env`: the shared Google client's id and
+   secret, plus its own `openssl rand -hex 16` cookie secret); `docker compose up -d`. Google login needs
+   `https://qiita-dev.knight-lab-dev.org/oauth2/callback` among the OAuth client's redirect URIs.
+6. Expose: ingress `qiita-dev.knight-lab-dev.org -> http://localhost:4185` above the catch-all in
+   `~/.cloudflared/config.yml`, `cloudflared tunnel ingress validate`, `cloudflared tunnel route dns qiita-explore
+   qiita-dev.knight-lab-dev.org`, restart `cloudflared.service`.
 
-Logs: `journalctl --user -u qiita-node -u qiita-tunnel`.
-Undo: `systemctl --user disable --now qiita-node.timer qiita-tunnel.service`, remove the units and the Caddy block.
+Logs: `journalctl --user -u qiita-node -u qiita-tunnel -u qiita-web-deploy`.
+Undo: `systemctl --user disable --now qiita-node.timer qiita-tunnel.service qiita-web-deploy.timer`, `docker compose down` in
+`~/oauth2-proxy/qiita-dev`, remove the units, the Caddy block and the ingress rule (dated `.bak-*` copies exist).
