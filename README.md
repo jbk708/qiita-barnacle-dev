@@ -31,6 +31,12 @@ then queue the long job behind it with `--dependency=afterany:<short job id>`.
 Import-pilot and read-processing scripts live in
 [jbk708/qiita-cq-analysis](https://github.com/jbk708/qiita-cq-analysis).
 
+## Keep it up
+
+`stack/watch-stack.sh` (detached on the login node) restarts the stack when a service dies or the control plane
+stops answering: it stops Postgres cleanly, submits a replacement that waits for the old job, repoints any pending
+stack job, and cancels the old one. At most 3 restarts per 24 h; log in `$QDEV_ROOT/logs/watch-stack.log`.
+
 ## Update the code
 
 Check no ticket is running (`./stack/qiita-dev.sh ticket list`), then: update `$QDEV_ROOT/Qiita` (merge or pull, no commit
