@@ -49,7 +49,9 @@ qiita-node.timer (2 min) ─▶ qiita-node.sh: newest running qiita-dev-stack jo
    `https://qiita-dev.knight-lab-dev.org/oauth2/callback` among the OAuth client's redirect URIs.
 6. Expose: ingress `qiita-dev.knight-lab-dev.org -> http://localhost:4185` above the catch-all in
    `~/.cloudflared/config.yml`, `cloudflared tunnel ingress validate`, `cloudflared tunnel route dns qiita-explore
-   qiita-dev.knight-lab-dev.org`, restart `cloudflared.service`.
+   qiita-dev.knight-lab-dev.org`, restart `cloudflared.service`. Then `cloudflared tunnel info qiita-explore` must show
+   one connector: a second one (a hand-started `cloudflared tunnel run`) keeps the old config and 404s the new hostname
+   for part of the traffic.
 
 Logs: `journalctl --user -u qiita-node -u qiita-tunnel -u qiita-web-deploy`.
 Undo: `systemctl --user disable --now qiita-node.timer qiita-tunnel.service qiita-web-deploy.timer`, `docker compose down` in
