@@ -28,7 +28,7 @@ cat > $E/data-plane.env <<X
 FLIGHT_TICKET_PUBLIC_KEY=$PUBLIC
 DUCKLAKE_CATALOG_CONNSTR=dbname=qiita_ducklake host=localhost port=$PGPORT user=$USER
 PATH_PERSISTENT=$B/persistent
-LISTEN_ADDR=127.0.0.1:$DP
+LISTEN_ADDR=0.0.0.0:$DP
 $COMMON
 X
 cat > $E/compute-orchestrator.env <<X

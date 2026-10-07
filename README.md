@@ -31,6 +31,14 @@ then queue the long job behind it with `--dependency=afterany:<short job id>`.
 Import-pilot and read-processing scripts live in
 [jbk708/qiita-cq-analysis](https://github.com/jbk708/qiita-cq-analysis).
 
+## Share it with a colleague
+
+The control plane and data plane listen on the node's address (Postgres and the orchestrator stay on localhost);
+the stack writes the current URLs to `$QDEV_SHARE/stack.env` on every start. Give each person their own token:
+`stack/add_user.py <name> <email> <user|wet_lab_admin|system_admin> <token_file>` (run on the stack's node with
+`env/control-plane.env` loaded). They then use the `qiita` CLI with `QIITA_CONTROL_PLANE_URL` + `QIITA_TOKEN`, or the
+web UI (`qiita-web`, `QIITA_BASE=<control plane URL> npm run dev`) with the token pasted in.
+
 ## Keep it up
 
 `stack/watch-stack.sh` (detached on the login node) restarts the stack when a service dies or the control plane

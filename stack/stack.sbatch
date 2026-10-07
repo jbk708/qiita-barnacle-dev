@@ -52,7 +52,7 @@ SLURM_NATIVE_PYTHON=$Q/qiita-compute-orchestrator/.venv/bin/python \
   exec $Q/qiita-data-plane/target/release/qiita-data-plane ) >> $L/dp.log 2>&1 &
 PIDS+=($!)
 ( set -a; source $E/control-plane.env; set +a; cd $Q/qiita-control-plane
-  exec .venv/bin/uvicorn qiita_control_plane.main:app --host 127.0.0.1 --port $CP ) >> $L/cp.log 2>&1 &
+  exec .venv/bin/uvicorn qiita_control_plane.main:app --host 0.0.0.0 --port $CP ) >> $L/cp.log 2>&1 &
 PIDS+=($!)
 wait_http http://127.0.0.1:$CP/healthz
 
@@ -75,6 +75,8 @@ fi
 PIDS+=($!)
 wait_http http://127.0.0.1:$CO/healthz || true
 echo "[stack] up: CP http://127.0.0.1:$CP  CO :$CO  DP :$DP  PG :$PGPORT"
+# where colleagues on the cluster find the stack (Postgres and the orchestrator stay on localhost)
+printf "QIITA_CONTROL_PLANE_URL=http://%s:%s\nDATA_PLANE_URL=grpc://%s:%s\n" "$(hostname -s)" "$CP" "$(hostname -s)" "$DP" > $QDEV_SHARE/stack.env && chmod 640 $QDEV_SHARE/stack.env
 
 ( while sleep 86400; do
     $PG pg_dump -h localhost -p $PGPORT -Fc qiita > $B/pg-dumps/qiita-$(date +%F).dump
