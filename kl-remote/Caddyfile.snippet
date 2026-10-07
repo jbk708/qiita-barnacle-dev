@@ -1,0 +1,12 @@
+# qiita-web SPA + API on kl-remote. Fronted by cloudflared and oauth2-proxy like the other hostnames.
+:8187 {
+	bind 127.0.0.1
+	handle /api/* {
+		reverse_proxy 127.0.0.1:18080
+	}
+	handle {
+		root * /home/kl-user/qiita-web/build
+		try_files {path} /index.html
+		file_server
+	}
+}

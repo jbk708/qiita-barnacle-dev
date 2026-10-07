@@ -1,0 +1,9 @@
+[Unit]
+Description=Qiita node tick (find the barnacle node running qiita-dev-stack, steer qiita-tunnel)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=%h/qiita-node/qiita-node.sh
+TimeoutStartSec=90

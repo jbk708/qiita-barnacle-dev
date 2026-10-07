@@ -1,0 +1,14 @@
+# Append to ~/.ssh/config on kl-remote. The existing `Host barnacle` is another user's identity; leave it alone.
+Host barnacle-jk
+  HostName barnacle.ucsd.edu
+  User jokirkland
+  IdentityFile ~/.ssh/barnacle_jokirkland_ed25519
+  IdentitiesOnly yes
+
+# Compute nodes, reached through the login node (barnacle lets you in where you have a running job).
+Host b-cn-* b-gpu-*
+  User jokirkland
+  IdentityFile ~/.ssh/barnacle_jokirkland_ed25519
+  IdentitiesOnly yes
+  ProxyJump barnacle-jk
+  StrictHostKeyChecking accept-new

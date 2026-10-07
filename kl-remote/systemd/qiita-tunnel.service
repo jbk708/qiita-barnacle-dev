@@ -1,0 +1,27 @@
+[Unit]
+Description=SSH local-forward kl-user:18080 -> Qiita dev-stack control plane on its barnacle node
+# Don't start until qiita-node.sh has written the env file at least once.
+ConditionPathExists=%h/.config/qiita-node/tunnel-qiita.env
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+EnvironmentFile=%h/.config/qiita-node/qiita-node.env
+EnvironmentFile=%h/.config/qiita-node/tunnel-qiita.env
+# Forward to the node's loopback (via ProxyJump in ~/.ssh/config), so it works whatever the CP binds.
+ExecStart=/usr/bin/ssh -N \
+    -o BatchMode=yes \
+    -o ExitOnForwardFailure=yes \
+    -o ServerAliveInterval=30 \
+    -o ServerAliveCountMax=3 \
+    -o ControlMaster=no \
+    -o ControlPath=none \
+    -L 127.0.0.1:${LOCAL_PORT}:127.0.0.1:${CP_PORT} \
+    ${QIITA_NODE}
+# Always: ssh exits 0 on a clean remote close, which on-failure would not restart.
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=default.target
