@@ -4,7 +4,7 @@ Serves the qiita-web SPA from kl-remote against the barnacle dev stack, which mo
 Same shape as the mimo gateway: a 2-minute timer finds the node, an ssh forward follows it.
 
 ```
-browser ─▶ cloudflared ─▶ oauth2-proxy :4185 ─▶ Caddy 127.0.0.1:8187 ─┬─ /api/* ─▶ 127.0.0.1:18080 ─▶ qiita-tunnel (ssh -J barnacle) ─▶ <node>:127.0.0.1:18080
+browser ─▶ cloudflared ─▶ Caddy 127.0.0.1:8187 ─┬─ /api/* ─▶ 127.0.0.1:18080 ─▶ qiita-tunnel (ssh -J barnacle) ─▶ <node>:127.0.0.1:18080
                                                                 └─ SPA build/
 qiita-node.timer (2 min) ─▶ qiita-node.sh: newest running qiita-dev-stack job that is up and answers /healthz ─▶ tunnel-qiita.env, restart the tunnel
 ```
@@ -13,7 +13,8 @@ qiita-node.timer (2 min) ─▶ qiita-node.sh: newest running qiita-dev-stack jo
 - The tunnel hops onto the stack's node and forwards to its loopback, so it works whether the control plane binds
   `127.0.0.1` or `0.0.0.0`. barnacle allows ssh into a node where you have a running job.
 - No new ports open on the LAN: Caddy and the tunnel bind 127.0.0.1.
-- The dev stack has no login (AuthRocket off), so users paste a personal token after the Google gate.
+- No Google gate (owner, 2026-10-07): the app's own token auth guards the API; users paste a personal token.
+  Unauthenticated routes (`/healthz`, OpenAPI) are public, and `/_env/prod/api` reaches qiita-miint through kl-remote.
 
 ## Install (each step is a write on kl-remote: run it only with the owner's go-ahead)
 
@@ -49,10 +50,10 @@ qiita-node.timer (2 min) ─▶ qiita-node.sh: newest running qiita-dev-stack jo
    wrapper>`, so editing the config redeploys on the next tick. Install both next to the script and the config at
    `~/.qiita/config.toml`.
 4. Caddy: append `Caddyfile.snippet` to `~/Caddyfile`, `~/caddy validate --config ~/Caddyfile`, `~/caddy reload ...`.
-5. Gate: `oauth2-proxy-qiita-dev.compose.yml` in `~/oauth2-proxy/qiita-dev/` (`.env`: the shared Google client's id and
+5. Gate (removed 2026-10-07; to restore, bring it up and point the ingress at `localhost:4185`): `oauth2-proxy-qiita-dev.compose.yml` in `~/oauth2-proxy/qiita-dev/` (`.env`: the shared Google client's id and
    secret, plus its own `openssl rand -hex 16` cookie secret); `docker compose up -d`. Google login needs
    `https://qiita-dev.knight-lab-dev.org/oauth2/callback` among the OAuth client's redirect URIs.
-6. Expose: ingress `qiita-dev.knight-lab-dev.org -> http://localhost:4185` above the catch-all in
+6. Expose: ingress `qiita-dev.knight-lab-dev.org -> http://127.0.0.1:8187` above the catch-all in
    `~/.cloudflared/config.yml`, `cloudflared tunnel ingress validate`, `cloudflared tunnel route dns qiita-explore
    qiita-dev.knight-lab-dev.org`, restart `cloudflared.service`. Then `cloudflared tunnel info qiita-explore` must show
    one connector: a second one (a hand-started `cloudflared tunnel run`) keeps the old config and 404s the new hostname
