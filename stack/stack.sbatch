@@ -69,7 +69,8 @@ if [ ! -f $E/co-to-cp.token ]; then
     rm -f $RUN/sa.json )
 fi
 
-( set -a; source $E/compute-orchestrator.env; set +a; export CO_TO_CP_TOKEN=$(cat $E/co-to-cp.token)
+# In-process steps would each size DuckDB to this whole job (SLURM_MEM_PER_NODE); hide it so each uses its own budget.
+( unset SLURM_MEM_PER_NODE; set -a; source $E/compute-orchestrator.env; set +a; export CO_TO_CP_TOKEN=$(cat $E/co-to-cp.token)
   cd $Q/qiita-compute-orchestrator
   exec .venv/bin/uvicorn qiita_compute_orchestrator.main:app --host 127.0.0.1 --port $CO ) >> $L/co.log 2>&1 &
 PIDS+=($!)
