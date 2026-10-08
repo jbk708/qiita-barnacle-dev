@@ -69,8 +69,13 @@ if [ ! -f $E/co-to-cp.token ]; then
     rm -f $RUN/sa.json )
 fi
 
+# Slurm backend: keep the slurmrestd JWT fresh (24 h token, renewed every 6 h).
+grep -q '^COMPUTE_BACKEND=slurm' $E/compute-orchestrator.env && ( while :; do
+  t=$(env -u SLURM_JWT scontrol token lifespan=86400 2>/dev/null | sed -n 's/^SLURM_JWT=//p')
+  [ -n "$t" ] && ( umask 077; printf '%s\n' "$t" > $E/slurmrestd.jwt.tmp && mv $E/slurmrestd.jwt.tmp $E/slurmrestd.jwt )
+  sleep 21600; done ) &
 # In-process steps would each size DuckDB to this whole job (SLURM_MEM_PER_NODE); hide it so each uses its own budget.
-( unset SLURM_MEM_PER_NODE; set -a; source $E/compute-orchestrator.env; set +a; export CO_TO_CP_TOKEN=$(cat $E/co-to-cp.token)
+( unset SLURM_MEM_PER_NODE; set -a; source $E/compute-orchestrator.env; set +a; export QIITA_CP_URL=http://$(hostname -s):$CP DATA_PLANE_URL=grpc://$(hostname -s):$DP; export CO_TO_CP_TOKEN=$(cat $E/co-to-cp.token)
   cd $Q/qiita-compute-orchestrator
   exec .venv/bin/uvicorn qiita_compute_orchestrator.main:app --host 127.0.0.1 --port $CO ) >> $L/co.log 2>&1 &
 PIDS+=($!)
